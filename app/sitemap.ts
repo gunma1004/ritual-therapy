@@ -100,7 +100,6 @@ const regionData: Record<string, { name: string; districts: Record<string, { nam
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // 🌐 리추얼 Netlify 공식 도메인
   const baseUrl = 'https://ritual-therapy.netlify.app';
 
   // 1. 메인 홈 페이지
@@ -135,12 +134,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  // 4. regionData를 활용하여 모든 지역(시·도, 구·군, 한글 구 이름, 동·읍·면, 샵 상세) 경로 동적 생성
+  // 4. 지역, 구, 동(쿼리 파라미터 방식) 및 샵 경로 동적 생성
   const dynamicRegionRoutes: MetadataRoute.Sitemap = [];
 
   Object.entries(regionData).forEach(([regionKey, regionVal]) => {
     Object.entries(regionVal.districts).forEach(([districtKey, districtVal]) => {
-      // 영문 키 경로와 한글 구 이름 경로를 모두 생성하여 라우팅 매칭 보장 (예: /gyeonggi/yeoju 및 /gyeonggi/여주시)
+      // 구 단위 경로들 생성 (영문 키 및 한글 이름 모두 지원)
       const districtPaths = [
         `${regionKey}/${districtKey}`,
         `${regionKey}/${encodeURIComponent(districtVal.name)}`
@@ -153,30 +152,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
           changeFrequency: 'daily',
           priority: 0.9,
         });
-      });
 
-      // 5. 세부 동·읍·면 및 각 동별 샵 상세 페이지 경로 자동 순회 추가 (연천군 전곡읍, 여주시 여흥동 등 누락 방지)
-      const primaryDistrictPath = `${regionKey}/${encodeURIComponent(districtVal.name)}`;
-
-      districtVal.dongs.forEach((dong) => {
-        const encodedDong = encodeURIComponent(dong);
-        const dongBasePath = `${primaryDistrictPath}/${encodedDong}`;
-
-        // 동·읍·면 페이지
-        dynamicRegionRoutes.push({
-          url: `${baseUrl}/${dongBasePath}`,
-          lastModified: new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.7,
-        });
-
-        // 해당 동의 샵 상세 페이지들 (/region/district/dong/shop/1 ~ 5)
-        [1, 2, 3, 4, 5].forEach((shopId) => {
+        // 🌟 쿼리 파라미터 방식의 동 페이지 추가 (예: /incheon/동구?dong=송림6동)
+        districtVal.dongs.forEach((dong) => {
+          const encodedDong = encodeURIComponent(dong);
+          
           dynamicRegionRoutes.push({
-            url: `${baseUrl}/${dongBasePath}/shop/${shopId}`,
+            url: `${baseUrl}/${districtPath}?dong=${encodedDong}`,
             lastModified: new Date(),
             changeFrequency: 'weekly',
-            priority: 0.6,
+            priority: 0.7,
           });
         });
       });
