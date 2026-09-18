@@ -134,15 +134,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  // 4. 지역, 구, 동(쿼리 파라미터 방식) 및 샵 경로 동적 생성
+  // 4. 지역, 구, 동(쿼리 파라미터 방식) 및 쿼리 파라미터 샵 경로 동적 생성
   const dynamicRegionRoutes: MetadataRoute.Sitemap = [];
 
   Object.entries(regionData).forEach(([regionKey, regionVal]) => {
     Object.entries(regionVal.districts).forEach(([districtKey, districtVal]) => {
-      // 구 단위 경로들 생성 (영문 키 및 한글 이름 모두 지원)
+      const regionKoreanName = regionVal.name; // 예: "서울특별시"
+      const districtKoreanName = districtVal.name; // 예: "강북구"
+
+      // 구 단위 경로들 생성
       const districtPaths = [
         `${regionKey}/${districtKey}`,
-        `${regionKey}/${encodeURIComponent(districtVal.name)}`
+        `${regionKey}/${encodeURIComponent(districtKoreanName)}`
       ];
 
       districtPaths.forEach((districtPath) => {
@@ -153,7 +156,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           priority: 0.9,
         });
 
-        // 🌟 쿼리 파라미터 방식의 동 페이지 추가 (예: /incheon/동구?dong=송림6동)
+        // 쿼리 파라미터 방식의 동 페이지 추가 (예: /incheon/동구?dong=송림6동)
         districtVal.dongs.forEach((dong) => {
           const encodedDong = encodeURIComponent(dong);
           
@@ -162,6 +165,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
             lastModified: new Date(),
             changeFrequency: 'weekly',
             priority: 0.7,
+          });
+        });
+      });
+
+      // 🌟 5. 쿼리 파라미터 샵 페이지 추가 (/shop/1~5?region=시/도%20구명%20(동이름))
+      districtVal.dongs.forEach((dong) => {
+        const fullLocationString = `${regionKoreanName} ${districtKoreanName} (${dong})`;
+        const encodedRegionParam = encodeURIComponent(fullLocationString);
+
+        [1, 2, 3, 4, 5].forEach((shopId) => {
+          dynamicRegionRoutes.push({
+            url: `${baseUrl}/shop/${shopId}?region=${encodedRegionParam}`,
+            lastModified: new Date(),
+            changeFrequency: 'weekly',
+            priority: 0.6,
           });
         });
       });
